@@ -1,0 +1,30 @@
+#!/bin/bash
+# file_organizer.sh - File Organizer and Backup Tool
+# Backs up a folder, then sorts its files into Images, Documents, Videos and Others.
+# Usage: ./file_organizer.sh [folder]     (default folder: ~/Downloads)
+
+SRC="${1:-$HOME/Downloads}"
+BACKUP_DIR="$HOME/backups"
+
+# Create the folders we need
+mkdir -p "$BACKUP_DIR" "$SRC"/{Images,Documents,Videos,Others}
+
+# Step 1: backup the folder as a compressed tar file with date and time
+tar -czf "$BACKUP_DIR/backup_$(date +%F_%H%M).tar.gz" -C "$SRC" .
+
+# Step 2: move each file into the right folder based on its extension
+count=0
+for file in "$SRC"/*; do
+  [ -f "$file" ] || continue          # skip folders
+  case "${file,,}" in                 # ${file,,} makes the name lowercase
+    *.jpg|*.jpeg|*.png|*.gif)         dest="Images" ;;
+    *.pdf|*.doc|*.docx|*.txt|*.ppt*)  dest="Documents" ;;
+    *.mp4|*.mkv|*.avi)                dest="Videos" ;;
+    *)                                dest="Others" ;;
+  esac
+  mv "$file" "$SRC/$dest/"
+  count=$((count + 1))
+done
+
+echo "Organized $count files in $SRC"
+echo "Backup saved in $BACKUP_DIR"
